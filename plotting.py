@@ -12,8 +12,11 @@ def plot_elt_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elt: LumpedMass, ax=None,
     if orbital_period:
         ts /= orbital_period
 
+    artists = []
+
     axT = ax
-    axT.plot(ts,Ts, label='T')
+    T_line, = axT.plot(ts,Ts, label='T')
+    artists.append(T_line)
     if orbital_period:
         axT.set_xlabel('Time (orbital periods)')
     elif type(ts[0]) == float:
@@ -24,9 +27,12 @@ def plot_elt_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elt: LumpedMass, ax=None,
 
     axQ = axT.twinx()
     for lbl, qs in q_flows.items():
-        axQ.scatter(ts, qs, label=lbl)
+        q_scatter = axQ.scatter(ts, qs, label=lbl)
+        artists.append(q_scatter)
     axQ.set_ylabel('Heat flux (W)')
 
-    axQ.legend()
+    # Add legend last so it's on top of everything,
+    # and explicitly pass it all artists from both axes
+    axQ.legend(handles=artists)
 
     return ax
