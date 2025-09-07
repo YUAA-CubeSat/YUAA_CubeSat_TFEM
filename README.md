@@ -2,14 +2,18 @@
 Thermal finite-element analysis for the Yale Undergrad Aerospace Association's CubeSat
 
 ## Dependencies
-SGP4 orbital propagator taken from: \
-[2] https://pypi.org/project/sgp4/
+### Orbital model
+
+### Numerical integration
+
+### Visualization
 
 ## Contents
 
 ### Unit conventions
 
 ## Scope, limitations, extensions
+
 
 ## References
 Much of the methodology and some of the math for this project is taken from: \

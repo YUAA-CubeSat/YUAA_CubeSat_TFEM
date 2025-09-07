@@ -4,13 +4,13 @@ import numpy as np
 
 from lumped_mass import LumpedMass
 
-def plot_elt_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elt: LumpedMass, ax=None, orbital_period=None):
+def plot_elt_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elt: LumpedMass, ax=None, orbital_period=None, show_legend=True):
     if ax is None:
         fig, ax = plt.subplots()
     q_flows = elt.get_history(ts).filter(like='q_')
 
     if orbital_period:
-        ts /= orbital_period
+        ts = ts.copy() / orbital_period
 
     artists = []
 
@@ -33,8 +33,122 @@ def plot_elt_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elt: LumpedMass, ax=None,
 
     # Add legend last so it's on top of everything,
     # and explicitly pass it all artists from both axes
-    axQ.legend(handles=artists)
+    if show_legend:
+        axQ.legend(handles=artists)
 
+    return axT, axQ, artists
+
+def plot_elts_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elts: list, orbital_period=None, ncols=2, elt_names: list[str]|None = None):
+    """
+    Plot T and q_flows for multiple LumpedMass objects in a grid of subplots.
+    ts: 1D array of times
+    Ts: 2D array of temperatures, shape (n_elts, len(ts))
+    elts: list of LumpedMass objects
+    orbital_period: optional, for x-axis scaling
+    ncols: number of columns in the subplot grid
+    elt_names: optional list of element names to act as subplot titles
+    """
+    import math
+    n_elts = len(elts)
+    nrows = math.ceil(n_elts / ncols)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(6*ncols, 4*nrows), sharex=True, sharey=True)
+    axes = np.array(axes).reshape(nrows, ncols)
+
+    # Determine global x/y limits for all subplots
+    all_Ts = np.array(Ts).flatten()
+    T_min, T_max = np.min(all_Ts), np.max(all_Ts)
+    x_min, x_max = np.min(ts), np.max(ts)
+    
+    # Store all q_flow data to determine y-axis limits for heat flux
+    all_q_flows = []
+    
+    # First pass to collect all heat flux data
+    for elt in elts:
+        q_flows = elt.get_history(ts).filter(like='q_')
+        for _, qs in q_flows.items():
+            all_q_flows.extend(qs.tolist())
+    
+    # Calculate global heat flux limits
+    q_min, q_max = np.min(all_q_flows), np.max(all_q_flows)
+    # Add a small margin
+    q_range = q_max - q_min
+    q_min -= 0.05 * q_range
+    q_max += 0.05 * q_range
+
+    # Store all artists for the common legend
+    all_artists = []
+
+    # Create plots using plot_elt_T_q_flows
+    for idx, (elt, Ts_elt) in enumerate(zip(elts, Ts)):
+        row, col = divmod(idx, ncols)
+        ax = axes[row, col]
+        
+        # Use plot_elt_T_q_flows but don't show individual legends
+        axT, axQ, artists = plot_elt_T_q_flows(ts, Ts_elt, elt, ax=ax, orbital_period=orbital_period, show_legend=False)
+        
+        # Configure axes based on position
+        # Only show x label on bottom row
+        if row != nrows - 1:
+            axT.set_xlabel("")
+        
+        # Only show primary y label on leftmost column
+        if col != 0:
+            axT.set_ylabel("")
+        
+        # Only show secondary y-axis (heat flux) on rightmost column
+        if col != ncols - 1:
+            axQ.set_yticks([])
+            axQ.set_ylabel("")
+        
+        # Set consistent limits
+        axT.set_ylim(T_min, T_max)
+        axT.set_xlim(x_min, x_max)
+        axQ.set_ylim(q_min, q_max)
+        
+        # Save artists from the first plot for the legend
+        if idx == 0:
+            all_artists = artists
+            
+        # Set subplot title
+        ax.set_title(f"Element {idx}" if elt_names is None else elt_names[idx])
+
+    # Hide unused axes
+    for idx in range(n_elts, nrows*ncols):
+        row, col = divmod(idx, ncols)
+        axes[row, col].set_visible(False)
+
+    # Create a single legend outside the subplots
+    fig.legend(handles=all_artists, loc='lower center', bbox_to_anchor=(0.5, 0), 
+               ncol=min(len(all_artists), 3), frameon=True)
+    
+    # Adjust layout to make room for the legend
+    fig.tight_layout(rect=(0, 0.1, 1, 0.98))
+    
+    return fig, axes
+
+def plot_elts_Ts(ts: np.ndarray, y: np.ndarray, ax = None, orbital_period = None, elt_names: list[str]|None = None):
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    if orbital_period:
+        ts = ts.copy() / orbital_period
+
+    # y has shape (len(state_vector), len(ts))
+    # Here we drop the first 12 components of the state vector (which represent rotation of the body)
+    # and keep all the temperatures that come after, for the entire range of times
+    Ts = y[12:,:]
+
+    for i in range(len(Ts)):
+        ax.plot(ts, Ts[i,:], label=f"Element {i}" if elt_names is None else elt_names[i])
+
+    if orbital_period:
+        ax.set_xlabel('Time (orbital periods)')
+    elif type(ts[0]) == float:
+        ax.set_xlabel('Time (s)')
+    else:
+        ax.set_xlabel('Time')
+    ax.set_ylabel('T (K)')
+    ax.legend()
     return ax
 
 def animate_body_rotation_vtk(sol, fps=50):

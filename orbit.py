@@ -133,6 +133,7 @@ class SGP4Orbit(Orbit):
         except AttributeError:
             pass
         
+        assert t.tz is not None
         time_JD = t.to_julian_date()
         e,r_sat,v = self.satrec.sgp4(time_JD, 0.0)
         if e != 0:
