@@ -16,15 +16,13 @@ def skew(w):
     ])
 
 class Body:
-    """Dataclass describing a rotating rigid body composed of lumped masses"""
+    """Dataclass describing a rotating rigid body"""
     def __init__(
             self,
-            lumped_masses: list[FlatLumpedMass],
             I: np.ndarray,                                      # Rotational inertia along each basis vector in the body frame (assuming diagonal inertia tensor)
             R0: np.ndarray = np.eye(3),                         # Initial rotation matrix, in inertial frame
             omega0: np.ndarray = np.array([0,0,np.radians(5)])  # Initial angular velocity vector, in body frame
         ):
-        self.elts = lumped_masses
         self.I = I
         assert np.isclose(np.linalg.det(R0), 1)
         self.R = R0
