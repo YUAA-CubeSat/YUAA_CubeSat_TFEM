@@ -20,9 +20,9 @@ class Body:
     def __init__(
             self,
             lumped_masses: list[FlatLumpedMass],
-            I: np.ndarray,                                      # Rotational inertia along each basis vector (assuming diagonal inertia tensor)
-            R0: np.ndarray = np.eye(3),                         # Initial rotation matrix
-            omega0: np.ndarray = np.array([0,0,np.radians(5)])  # Initial angular velocity vector
+            I: np.ndarray,                                      # Rotational inertia along each basis vector in the body frame (assuming diagonal inertia tensor)
+            R0: np.ndarray = np.eye(3),                         # Initial rotation matrix, in inertial frame
+            omega0: np.ndarray = np.array([0,0,np.radians(5)])  # Initial angular velocity vector, in body frame
         ):
         self.elts = lumped_masses
         self.I = I
@@ -30,6 +30,10 @@ class Body:
         self.R = R0
         self.omega = omega0
 
+    def set_input(self, body_R: np.ndarray, body_omega: np.ndarray) -> None:
+        self.R = body_R
+        self.omega = body_omega
+    
     def get_derivs(self) -> tuple[np.ndarray, np.ndarray]:
         """Return the derivative of the body rotation matrix and the body angular velocity vector"""
         # Angular momentum
