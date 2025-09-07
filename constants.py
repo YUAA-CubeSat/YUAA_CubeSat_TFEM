@@ -52,6 +52,6 @@ EARTH_ALBEDO_FACTOR = 0.19 # https://smallsat.uga.edu/images/documents/papers/Pr
 EARTH_IR_NORMAL_POWER = 218*u.W/(u.m**2) # https://smallsat.uga.edu/images/documents/papers/Preliminary_Thermal_Analysis_of_Small_Satellites.pdf
 LEO_TYP_SOLAR_NORMAL_POWER = 1368*u.W/(u.m**2) # https://smallsat.uga.edu/images/documents/papers/Preliminary_Thermal_Analysis_of_Small_Satellites.pdf
 ISS_TLE = (
-    '1 25544U 98067A   25123.76994336  .00009070  00000-0  17067-3 0  9990', 
-    '2 25544  51.6346 167.0693 0002284  76.2260 283.8983 15.49323238508271', 
+    '1 25544U 98067A   25249.87397102  .00012937  00000-0  23296-3 0  9996',
+    '2 25544  51.6325 262.1963 0004213 309.4705  50.5911 15.50156361527830'
 )
