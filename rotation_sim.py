@@ -41,6 +41,6 @@ class Body:
         body_L = self.I @ self.omega
         # Euler equations: dω/dt in the body frame (which is why L is not a constant)
         omegadot = np.linalg.inv(self.I) @ np.cross(body_L, self.omega)
-        # Orientation derivative: dR/dt = R * skew(ω)
-        body_Rdot = self.R @ skew(self.omega)
+        # Orientation derivative: dR/dt = R * skew(ω in inertial coords) = R * skew(R @ ω)
+        body_Rdot = self.R @ skew(self.R @ self.omega)
         return body_Rdot, omegadot
