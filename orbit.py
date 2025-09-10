@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pint; from pint import Quantity; u=pint.UnitRegistry()
 
-from constants import *
+import constants
 
 def check_intersection(r_sat: np.ndarray, r_sun: np.ndarray, R_earth: float) -> bool:
     """Check whether the sat is in Earth's shadow
@@ -70,16 +70,16 @@ class BetaCircularOrbit(Orbit):
     def __init__(self, altitude: Quantity, period: Quantity, beta_angle: float):
         self.beta_angle = beta_angle
         self.period = period.to(u.s).magnitude
-        self.beta_crit = np.arcsin(EARTH_RADIUS/(EARTH_RADIUS + altitude))
+        self.beta_crit = np.arcsin(constants.EARTH_RADIUS/(constants.EARTH_RADIUS + altitude))
         self.eclipse_fraction = \
             np.arccos(
                 (
-                    np.sqrt((altitude ** 2 + 2 * EARTH_RADIUS * altitude).to(u.m**2).magnitude)
-                    /((EARTH_RADIUS + altitude).to(u.m).magnitude * np.cos(beta_angle))
+                    np.sqrt((altitude ** 2 + 2 * constants.EARTH_RADIUS * altitude).to(u.m**2).magnitude)
+                    /((constants.EARTH_RADIUS + altitude).to(u.m).magnitude * np.cos(beta_angle))
                 )
             ) / (np.pi*u.radian) if abs(beta_angle) < self.beta_crit else 0
-        self.q_solar_typ = LEO_TYP_SOLAR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
-        self.q_earth_ir = EARTH_IR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
+        self.q_solar_typ = constants.LEO_TYP_SOLAR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
+        self.q_earth_ir = constants.EARTH_IR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
 
     def set_input(self, t: float):
         """
@@ -93,7 +93,7 @@ class BetaCircularOrbit(Orbit):
             q_solar = 0
         else: 
             q_solar = self.q_solar_typ
-        return q_solar, q_solar * EARTH_ALBEDO_FACTOR + self.q_earth_ir
+        return q_solar, q_solar * constants.EARTH_ALBEDO_FACTOR + self.q_earth_ir
 
 
 class SGP4Orbit(Orbit):
@@ -109,6 +109,9 @@ class SGP4Orbit(Orbit):
     
     def __init__(self, tle_line1: str, tle_line2: str, ephem_kernel_path: str, t_tol: float = 0):
         """Initialize orbit with two-line elements
+
+        ephem_kernel_path must point to a `.bsp` ehpemeris kernel file
+        that will be opened with `jplephem`.
         
         t_tol specifies a time tolerance:
         the Orbit will return a cached position instead of computing a new position
@@ -116,15 +119,15 @@ class SGP4Orbit(Orbit):
         of the last time update queried SGP4. 
         Can be used to reduce the number of SGP4 queries at the cost of accuracy. 
         """
-        from sgp4.api import Satrec, accelerated
+        from sgp4.api import Satrec
         from jplephem.spk import SPK
         super().__init__()
         self.satrec = Satrec.twoline2rv(tle_line1, tle_line2)
         self.kernel = SPK.open(ephem_kernel_path)
         self.t_tol = t_tol
-        self.earth_radius = EARTH_RADIUS.to(u.km).magnitude
-        self.q_solar_typ = LEO_TYP_SOLAR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
-        self.q_earth_ir = EARTH_IR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
+        self.earth_radius = constants.EARTH_RADIUS.to(u.km).magnitude
+        self.q_solar_typ = constants.LEO_TYP_SOLAR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
+        self.q_earth_ir = constants.EARTH_IR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
 
     def set_input(self, t: pd.Timestamp):
         try:
@@ -133,6 +136,8 @@ class SGP4Orbit(Orbit):
         except AttributeError:
             pass
         
+        # pandas allows calculation of Julian date
+        # from tz-naive Timestamps, which is ambiguous
         assert t.tz is not None
         time_JD = t.to_julian_date()
         e,r_sat,v = self.satrec.sgp4(time_JD, 0.0)
@@ -150,7 +155,7 @@ class SGP4Orbit(Orbit):
         # A double negation happens:
         # 1. sun-to-earth -> earth-to-sun
         # 2. ecliptic -> equatorial
-        earth_to_sun_eq = ECLIPTIC_TO_EQUATORIAL_R @ sun_to_earth_ecliptic
+        earth_to_sun_eq = constants.ECLIPTIC_TO_EQUATORIAL_R @ sun_to_earth_ecliptic
         self.r_sun = earth_to_sun_eq
 
     def get_earth_sun_vecs(self) -> tuple[np.ndarray, np.ndarray]:
@@ -166,7 +171,7 @@ class SGP4Orbit(Orbit):
             q_solar = 0
         else: 
             q_solar = self.q_solar_typ
-        return q_solar, q_solar * EARTH_ALBEDO_FACTOR + self.q_earth_ir
+        return q_solar, q_solar * constants.EARTH_ALBEDO_FACTOR + self.q_earth_ir
 
 # TODO - one could extend SGP4Orbit to also calculate Earth's albedo and IR and maybe even the solar normal power
 # depending on the sat position over the Earth, and Earth's position relative to the sun
