@@ -1,7 +1,5 @@
 import numpy as np
 
-from lumped_mass import FlatLumpedMass
-
 def reorthonormalize(R: np.ndarray) -> np.ndarray:
     """Clip a given matrix to the nearest orthonormal matrix using SVD"""
     U, _, Vt = np.linalg.svd(R)
@@ -16,21 +14,21 @@ def skew(w):
     ])
 
 class Body:
-    """Dataclass describing a rotating rigid body"""
+    """A rotating rigid body"""
     def __init__(
             self,
-            I: np.ndarray,                                      # Rotational inertia along each basis vector in the body frame (assuming diagonal inertia tensor)
-            R0: np.ndarray = np.eye(3),                         # Initial rotation matrix, in inertial frame
-            omega0: np.ndarray = np.array([0,0,np.radians(5)])  # Initial angular velocity vector, in body frame
+            I_body: np.ndarray,                                      # Rotational inertia along each basis vector in the body frame (assuming diagonal inertia tensor)
+            R0_inertial: np.ndarray = np.eye(3),                     # Initial rotation matrix, in inertial frame
+            omega0_body: np.ndarray = np.array([0,0,np.radians(5)])  # Initial angular velocity vector, in body frame
         ):
-        self.I = I
-        assert np.isclose(np.linalg.det(R0), 1)
-        self.R = R0
-        self.omega = omega0
+        self.I = I_body
+        assert np.isclose(np.linalg.det(R0_inertial), 1)
+        self.R = R0_inertial
+        self.omega = omega0_body
 
-    def set_input(self, body_R: np.ndarray, body_omega: np.ndarray) -> None:
-        self.R = body_R
-        self.omega = body_omega
+    def set_input(self, R_inertial: np.ndarray, omega_body: np.ndarray) -> None:
+        self.R = R_inertial
+        self.omega = omega_body
     
     def get_derivs(self) -> tuple[np.ndarray, np.ndarray]:
         """Return the derivative of the body rotation matrix and the body angular velocity vector"""
@@ -38,9 +36,9 @@ class Body:
         # Note: though this is free rotation i.e. angular momentum is consevred,
         # the angular momentum vector in the body frame is not constant
         # (though it is constant in any inertial frame).
-        body_L = self.I @ self.omega
+        L_body = self.I @ self.omega
         # Euler equations: dω/dt in the body frame (which is why L is not a constant)
-        omegadot = np.linalg.inv(self.I) @ np.cross(body_L, self.omega)
+        omegadot_body = np.linalg.inv(self.I) @ np.cross(L_body, self.omega)
         # Orientation derivative: dR/dt = R * skew(ω in inertial coords) = R * skew(R @ ω)
-        body_Rdot = self.R @ skew(self.R @ self.omega)
-        return body_Rdot, omegadot
+        Rdot_inertial = self.R @ skew(self.R @ self.omega)
+        return Rdot_inertial, omegadot_body

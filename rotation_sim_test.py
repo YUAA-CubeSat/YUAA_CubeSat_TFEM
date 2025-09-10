@@ -30,12 +30,12 @@ def propagate_rotation(body: Body, t_span, t_eval=None, **kwargs):
     )
     return sol
 
-omega0 = np.array([1.0,1.0,1]) * np.radians(5)
+omega0 = np.array([1,1,1]) * np.radians(5)
 R0 = np.eye(3)
 body = Body(
     np.diag([CUBESAT_ROTI_XY.to(u.kg*u.m**2).magnitude, CUBESAT_ROTI_XY.to(u.kg*u.m**2).magnitude, CUBESAT_ROTI_Z.to(u.kg*u.m**2).magnitude]),
-    R0 = R0,
-    omega0=omega0
+    R0_inertial = R0,
+    omega0_body=omega0
 )
 
 prop_duration_sec = 600
