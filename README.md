@@ -27,7 +27,10 @@ The `requirements.txt` file in this repo lists ALL dependencies, even the option
 * `lumped_mass.py`: class definitions for lumped mass objects. Linear subclassing is used to progressively expand the functionality of a lumped mass.
 * `orbit.py`: class definitions for orbital models. Includes a simple circular orbit with constant beta angle, and a more accurate orbit using SGP4 and jplephem.
 * `rotation_sim.py`: class definition for a rotating rigid body. Rotation is propagated with Euler's equation in body coordinates, tracking the body rotation matrix (in inertal coordinates) and the body angular velocity vector (in body coordinates).
-* `rotation_sim_test.py`: a simple script that propagates the rigid body rotation for a minute and then generates an interactive 3D animation using vtk.
+* `rotation_sim_test.py`: a simple script that propagates the rigid body rotation and then generates an interactive 3D animation using vtk.
+* `plotting.py`: a few matplotlib plot generators to get you started.
+* `simple_sim.py`: a jupyter notebook showing examples of using `UniformLumpedMass` and `BetaCircularOrbit` for the simplest possible "spherical cow" model.
+* `
 ### Unit conventions
 
 ## Scope, limitations, extensions

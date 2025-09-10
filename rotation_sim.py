@@ -19,7 +19,7 @@ class Body:
             self,
             I_body: np.ndarray,                                      # Rotational inertia along each basis vector in the body frame (assuming diagonal inertia tensor)
             R0_inertial: np.ndarray = np.eye(3),                     # Initial rotation matrix, in inertial frame
-            omega0_body: np.ndarray = np.array([0,0,np.radians(5)])  # Initial angular velocity vector, in body frame
+            omega0_body: np.ndarray = np.array([0,0,np.radians(5)])  # Initial angular velocity vector, in body frame, in units of rad/s
         ):
         self.I = I_body
         assert np.isclose(np.linalg.det(R0_inertial), 1)

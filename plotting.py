@@ -5,6 +5,13 @@ import numpy as np
 from lumped_mass import LumpedMass
 
 def plot_elt_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elt: LumpedMass, ax=None, orbital_period=None, show_legend=True):
+    """Plot heat flows for a LumpedMass
+    
+    elt must have history enabled, heat flows will be taken from there.
+    ts: 1D array of times
+    Ts: 1D array of temperatures
+    orbital_period: optional, x-axis will be labeled with ts/orbital_period if supplied
+    """
     if ax is None:
         fig, ax = plt.subplots()
     q_flows = elt.get_history(ts).filter(like='q_')
@@ -38,13 +45,13 @@ def plot_elt_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elt: LumpedMass, ax=None,
 
     return axT, axQ, artists
 
-def plot_elts_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elts: list, orbital_period=None, ncols=2, elt_names: list[str]|None = None):
+def plot_elts_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elts: list[LumpedMass], orbital_period=None, ncols=2, elt_names: list[str]|None = None):
     """
     Plot T and q_flows for multiple LumpedMass objects in a grid of subplots.
     ts: 1D array of times
     Ts: 2D array of temperatures, shape (n_elts, len(ts))
     elts: list of LumpedMass objects
-    orbital_period: optional, for x-axis scaling
+    orbital_period: optional, x-axis will be labeled with ts/orbital_period if supplied
     ncols: number of columns in the subplot grid
     elt_names: optional list of element names to act as subplot titles
     """
@@ -126,17 +133,19 @@ def plot_elts_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elts: list, orbital_peri
     
     return fig, axes
 
-def plot_elts_Ts(ts: np.ndarray, y: np.ndarray, ax = None, orbital_period = None, elt_names: list[str]|None = None):
+def plot_elts_Ts(ts: np.ndarray, Ts: np.ndarray, ax = None, orbital_period = None, elt_names: list[str]|None = None):
+    """Plot temperatures over time
+    
+    ts: 1D array of times
+    Ts: 2D array of temperatures, shape (n_elts, len(ts))
+    orbital_period: optional, x-axis will be labeled with ts/orbital_period if supplied
+    elt_names: optional list of element names for legend
+    """
     if ax is None:
         fig, ax = plt.subplots()
 
     if orbital_period:
         ts = ts.copy() / orbital_period
-
-    # y has shape (len(state_vector), len(ts))
-    # Here we drop the first 12 components of the state vector (which represent rotation of the body)
-    # and keep all the temperatures that come after, for the entire range of times
-    Ts = y[12:,:]
 
     for i in range(len(Ts)):
         ax.plot(ts, Ts[i,:], label=f"Element {i}" if elt_names is None else elt_names[i])
@@ -206,11 +215,6 @@ def animate_body_rotation_vtk(sol, fps=50):
 
     # --- Create Actors for Body Axes ---
     colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]  # Red, Green, Blue for x, y, z
-    directions = [
-        (1, 0, 0),  # x-axis
-        (0, 1, 0),  # y-axis
-        (0, 0, 1)   # z-axis
-    ]
     body_axes_actors = []
     
     for i in range(3):
@@ -243,6 +247,20 @@ def animate_body_rotation_vtk(sol, fps=50):
         renderer.AddActor(actor)
         body_axes_actors.append(actor)
 
+    # --- Create Actor for Omega Vector ---
+    omega_arrow = vtk.vtkArrowSource()
+    omega_arrow.SetTipResolution(20)
+    omega_arrow.SetShaftResolution(20)
+
+    omega_mapper = vtk.vtkPolyDataMapper()
+    omega_mapper.SetInputConnection(omega_arrow.GetOutputPort())
+
+    omega_actor = vtk.vtkActor()
+    omega_actor.SetMapper(omega_mapper)
+    omega_actor.GetProperty().SetColor(1, 1, 0)  # Yellow color for omega
+    omega_actor.SetScale(0.5)  # Scale arrow size to 0.5
+    renderer.AddActor(omega_actor)
+
     # --- Inertial Frame Axes ---
     axes = vtk.vtkAxesActor()
     axes.SetTotalLength(1.2, 1.2, 1.2)
@@ -252,53 +270,12 @@ def animate_body_rotation_vtk(sol, fps=50):
     axesWidget.EnabledOn()
     axesWidget.InteractiveOff()
     axesWidget.SetViewport(0.0, 0.0, 0.3, 0.3)
-    
-    # --- Create Angular Velocity Vector Visualization ---
-    # Create a line to represent angular velocity
-    omegaSource = vtk.vtkArrowSource()
-    omegaSource.SetTipResolution(20)
-    omegaSource.SetShaftResolution(20)
-    
-    # Create transform for the omega vector
-    omegaTransform = vtk.vtkTransform()
-    
-    # Create transform filter for the arrow
-    omegaTransformFilter = vtk.vtkTransformPolyDataFilter()
-    omegaTransformFilter.SetInputConnection(omegaSource.GetOutputPort())
-    omegaTransformFilter.SetTransform(omegaTransform)
-    omegaTransformFilter.Update()
-    
-    # Create mapper and actor for omega vector
-    omegaMapper = vtk.vtkPolyDataMapper()
-    omegaMapper.SetInputConnection(omegaTransformFilter.GetOutputPort())
-    
-    omegaActor = vtk.vtkActor()
-    omegaActor.SetMapper(omegaMapper)
-    omegaActor.GetProperty().SetColor(1.0, 1.0, 0.0)  # Yellow color
-    renderer.AddActor(omegaActor)
-    
-    # Text to display angular velocity magnitude
-    omegaTextActor = vtk.vtkTextActor()
-    omegaTextActor.SetInput("ω = 0.0 rad/s")
-    omegaTextActor.GetTextProperty().SetFontSize(16)
-    omegaTextActor.GetTextProperty().SetColor(1.0, 1.0, 0.0)  # Yellow color
-    omegaTextActor.SetPosition(10, 10)
-    renderer.AddActor2D(omegaTextActor)
-    
+        
     renderer.ResetCamera()
 
     # Create a transform for the body
     transform = vtk.vtkTransform()
-    
-    # Add a simple observer to handle key presses
-    def on_key_press(obj, event):
-        key = obj.GetKeySym()
-        print(f"Key pressed: {key}")
-        if key == 'q':
-            obj.ExitCallback()
-
-    interactor.AddObserver('KeyPressEvent', on_key_press)
-    
+        
     # Initialize the rendering and interaction
     print(f"Animating {len(Rs)} timesteps...")
     interactor.Initialize()
@@ -328,7 +305,7 @@ def animate_body_rotation_vtk(sol, fps=50):
         R = Rs[frame_index]
         omega = omegas[frame_index]
         
-        # Create and update the transformation matrix
+        # Create and update the transformation matrix for the body
         matrix = vtk.vtkMatrix4x4()
         for i in range(3):
             for j in range(3):
@@ -343,53 +320,47 @@ def animate_body_rotation_vtk(sol, fps=50):
         matrix.SetElement(3, 2, 0)
         matrix.SetElement(3, 3, 1)
         
-        # Update the transform
+        # Update the transform for the body
         transform.SetMatrix(matrix)
         
-        # Apply to all actors
+        # Apply the transform to the body and its axes
         cubeActor.SetUserTransform(transform)
         for actor in body_axes_actors:
             actor.SetUserTransform(transform)
-            
-        # Update angular velocity visualization
-        # Scale the vector for better visibility
-        omega_norm = np.linalg.norm(omega)
-        if omega_norm > 0:
-            omega_dir = omega / omega_norm
-            scale_factor = min(1.0, max(0.2, omega_norm * 10))  # Scale based on magnitude but limit range
-            
-            # Create a new transform for omega that includes rotation and scaling
-            omegaTransform.Identity()  # Reset transform
-            
-            # First rotate to align with omega direction
-            # Calculate rotation from z-axis (default arrow direction) to omega direction
-            if abs(omega_dir[2] - 1.0) < 1e-6:  # omega is already aligned with z-axis
-                pass  # No rotation needed
-            elif abs(omega_dir[2] + 1.0) < 1e-6:  # omega is opposite to z-axis
-                omegaTransform.RotateX(180)  # Rotate 180 degrees around X
-            else:
-                # Cross product to get rotation axis
-                axis = np.cross([0, 0, 1], omega_dir)
-                axis = axis / np.linalg.norm(axis)
-                
-                # Dot product to get rotation angle
-                angle = np.arccos(omega_dir[2])  # dot product of [0,0,1] and omega_dir
-                
-                # Apply rotation
-                omegaTransform.RotateWXYZ(np.degrees(angle), axis[0], axis[1], axis[2])
-            
-            # Then scale according to magnitude
-            omegaTransform.Scale(scale_factor, scale_factor, scale_factor)
-            
-            # Update the transform filter
-            omegaTransformFilter.Update()
-            
-            # Update the text display
-            omegaTextActor.SetInput(f"ω = {omega_norm:.3f} rad/s")
         
-        # Apply the body's transform to the omega actor to place it at the same origin
-        omegaActor.SetUserTransform(transform)
+        # The omega vector is in the body frame. To display it in the inertial frame,
+        # it must be rotated by R.
+        omega_inertial = R @ omega
         
+        # Create a transform for the omega vector to align it from the x-axis to the omega_inertial direction
+        omega_norm = np.linalg.norm(omega_inertial)
+        omega_transform = vtk.vtkTransform()
+        omega_transform.Identity() # Start with an identity transform
+        if omega_norm > 1e-6:
+            # The default arrow source points along the x-axis
+            v_from = np.array([1.0, 0.0, 0.0])
+            v_to = omega_inertial / omega_norm
+            
+            # Find rotation axis and angle
+            cross_prod = np.cross(v_from, v_to)
+            dot_prod = np.dot(v_from, v_to)
+            angle_rad = np.arccos(np.clip(dot_prod, -1.0, 1.0)) # clip for stability
+            angle_deg = np.rad2deg(angle_rad)
+            
+            # If vectors are not collinear, apply rotation
+            if np.linalg.norm(cross_prod) > 1e-6:
+                rotation_axis = cross_prod / np.linalg.norm(cross_prod)
+                omega_transform.RotateWXYZ(angle_deg, rotation_axis[0], rotation_axis[1], rotation_axis[2])
+            elif dot_prod < 0: # vectors are anti-parallel
+                # Rotate 180 degrees around an arbitrary axis perpendicular to v_from
+                omega_transform.RotateWXYZ(180, 0, 1, 0)
+
+        # Scale the omega vector. The scale factor determines its length in the visualization.
+        # The arrow source has a default length of 1.
+        scale_factor = float(omega_norm * 0.5)
+        omega_transform.Scale(scale_factor, scale_factor, scale_factor)
+        omega_actor.SetUserTransform(omega_transform)
+
         renderWindow.Render()
         interactor.ProcessEvents()  # Process any pending events
         

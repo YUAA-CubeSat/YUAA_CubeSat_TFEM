@@ -64,20 +64,20 @@ class BetaCircularOrbit(Orbit):
     and constant Earth IR radiation always. 
     The orbit is defined through an altitude above the surface of the (spherical) Earth,
     an orbital period,
-    and a beta angle, which is the angle between the Earth-Sun vector and the orbital plane.
+    and a beta anglein radians, which is the angle between the Earth-Sun vector and the orbital plane.
     """
 
-    def __init__(self, altitude: Quantity, period: Quantity, beta_angle: float):
-        self.beta_angle = beta_angle
+    def __init__(self, altitude: Quantity, period: Quantity, beta_angle_rad: float):
+        self.beta_angle = beta_angle_rad
         self.period = period.to(u.s).magnitude
         self.beta_crit = np.arcsin(constants.EARTH_RADIUS/(constants.EARTH_RADIUS + altitude))
         self.eclipse_fraction = \
             np.arccos(
                 (
                     np.sqrt((altitude ** 2 + 2 * constants.EARTH_RADIUS * altitude).to(u.m**2).magnitude)
-                    /((constants.EARTH_RADIUS + altitude).to(u.m).magnitude * np.cos(beta_angle))
+                    /((constants.EARTH_RADIUS + altitude).to(u.m).magnitude * np.cos(beta_angle_rad))
                 )
-            ) / (np.pi*u.radian) if abs(beta_angle) < self.beta_crit else 0
+            ) / (np.pi*u.radian) if abs(beta_angle_rad) < self.beta_crit else 0
         self.q_solar_typ = constants.LEO_TYP_SOLAR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
         self.q_earth_ir = constants.EARTH_IR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
 
