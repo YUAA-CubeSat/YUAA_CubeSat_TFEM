@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 import enum
-from numpy import ndarray
-from numpy._core.multiarray import array
+import numpy as np
+import pandas as pd
 import pint; from pint import Quantity; u=pint.UnitRegistry()
 
-from constants import *
+import constants
 
 class Rad_Src(enum.Enum):
     SUN = enum.auto()
@@ -35,14 +35,14 @@ class LumpedMass(ABC):
 
     def __init__(
             self, 
-            m: Quantity = 1*u.kg,                   # mass
-            c: Quantity = AL_6061_SPEC_HEAT_CAP,    # specific heat capacity
-            A_rad: Quantity = 100*u.cm*u.cm,        # radiative area
-            a: float = 0.95,                        # absorptivity
-            e: float = 0.95,                        # emissivity
-            q_int: Quantity = 1*u.W,                # internal heating power
-            T0: Quantity = 273*u.degK,              # initial temperature
-            store_history : bool = False            # whether to store a snapshot of calculated results at every evaluation
+            m: Quantity,                    # mass
+            c: Quantity,                    # specific heat capacity
+            A_rad: Quantity,                # radiative area
+            a: float,                       # absorptivity
+            e: float,                       # emissivity
+            q_int: Quantity,                # internal heating power
+            T0: Quantity,                   # initial temperature
+            store_history : bool = False    # whether to store a snapshot of calculated results at every evaluation
     ):
         self.m = m.to(u.kg).magnitude
         self.c = c.to(u.J/(u.kg * u.degK)).magnitude
@@ -52,7 +52,7 @@ class LumpedMass(ABC):
         self.q_int = q_int.to(u.W).magnitude
         self.T = T0.to(u.degK).magnitude
 
-        self.sb_sigma = SB_SIGMA.to(u.W/(u.m**2 * u.degK**4)).magnitude
+        self.sb_sigma = constants.SB_SIGMA.to(u.W/(u.m**2 * u.degK**4)).magnitude
 
         self.store_history = store_history
         if store_history:
@@ -76,7 +76,7 @@ class LumpedMass(ABC):
         return normal_power * self._get_view_factor(src) * self.a * self.A_rad
 
     def _get_q_out(self) -> float:
-        """Heat flowing out is negative"""
+        # Heat flowing out is negative
         return -self.sb_sigma * self.e * self.T**4 * self.A_rad
     
     def _get_q_flows(self) -> np.ndarray:
@@ -135,14 +135,13 @@ class LumpedMass(ABC):
         return history.iloc[insertion_indices]
 
 
-    
 class UniformLumpedMass(LumpedMass):
     """A lumped mass that always has a constant view factor to everything"""
 
     def __init__(
             self, 
             *args, 
-            F: float = 0.2, # Constant view factor
+            F: float, # Constant view factor
             **kwargs
         ):
         super().__init__(*args, **kwargs)
@@ -199,7 +198,11 @@ class ConnectedLumpedMass(FlatLumpedMass):
         super().__init__(*args, **kwargs)
         self.connections = []
 
-    def connect(self, other: 'ConnectedLumpedMass', K: Quantity = AL_HEAT_CONDUCTIVITY * 2*u.cm * 10*u.cm) -> None:
+    def connect(
+            self, 
+            other: 'ConnectedLumpedMass', 
+            K: Quantity                     # contact heat conductance
+    ) -> None:
         """Bidirectional heat conduction connection
         
         Call only once for a pair of lumped masses!
