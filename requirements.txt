@@ -1,7 +1,8 @@
+jplephem
 matplotlib
 numpy
 pandas
 pint
 scipy
 sgp4
-jplephem
+vtk

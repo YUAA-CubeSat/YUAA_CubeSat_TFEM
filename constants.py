@@ -25,7 +25,7 @@ FR4_ABSORPTANCE = 0.95 # http://www.solarmirror.com/fom/fom-serve/cache/43.html
 AL_6061_SPEC_HEAT_CAP = 897*u.J/(u.kg*u.degK) # Wikipedia
 AL_EMISSIVITY = 0.03 # http://www.solarmirror.com/fom/fom-serve/cache/43.html
 AL_ABSORPTANCE = 0.09 # http://www.solarmirror.com/fom/fom-serve/cache/43.html
-AL_HEAT_CONDUCTIVITY = 400 * u.W/(u.m**2 * u.degK) # [1] TODO - refine
+AL_HEAT_CONDUCTIVITY = 400 * u.W/(u.m**2 * u.degK) # Versteeg, Casper, and Cotten TODO - refine
 PB_SPEC_HEAT_CAP = 127 * u.J/(u.kg*u.degK)
 
 # ~~~~~~~~ CUBESAT PROPERTIES ~~~~~~~~~~~
