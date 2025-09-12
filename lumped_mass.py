@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 import enum
 import numpy as np
 import pandas as pd
-import pint; from pint import Quantity; u=pint.UnitRegistry()
+from pint import Quantity
 
 import constants
+from constants import u
 
 class Rad_Src(enum.Enum):
     SUN = enum.auto()

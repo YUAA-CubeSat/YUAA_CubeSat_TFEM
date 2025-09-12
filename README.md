@@ -30,11 +30,21 @@ The `requirements.txt` file in this repo lists ALL dependencies, even the option
 * `rotation_sim_test.py`: a simple script that propagates the rigid body rotation and then generates an interactive 3D animation using vtk.
 * `plotting.py`: a few matplotlib plot generators to get you started.
 * `simple_sim.py`: a jupyter notebook showing examples of using `UniformLumpedMass` and `BetaCircularOrbit` for the simplest possible "spherical cow" model.
-* `
+* `main_sim.py`: a jupyter notebook showcasing the full capabilities of this code, including accurate orbit propagation with an `SGP4Orbit` and using `ConnectedLumpedMass`es to represent the sat as six lumped masses corresponding to the six cuboid faces.
 ### Unit conventions
-
+Objects are initialized using pint Quantities, but objects immediately convert those to floats in SI units. At runtime, only unitless floats are used.
 ## Scope, limitations, extensions
+This is a very basic model offering at most a preliminary check of the rough temperature ranges the sat will experience on-orbit. Without resolving the sat into at least a dozen lumped masses and including internal radiation, no analysis of hotspots or local extremes can be made.
 
+As is, the propagations run at about 10'000x, so this code can probably scale to a few dozen lumped masses before it starts being unacceptably slow.
+
+The first extension that should probably be made to this code is accounting for internal radiation, which will need a new representation of lumped masses with more than one surface.
+
+Probably, you are better off using a professional software to run a proper TFEM `;)`
+
+### Known issues
+* The rotation kinematics are fishy. Probably periodic reorthonormalization during the propagation needs to be implemented, or better still, rotation matrices switched out for quaternions, which don't suffer from floating-point error accumulation as much.
+* The tracking of results through history on lumped masses, which just caches results from every propagator evaluation, produces nonsense values. The correct way to obtain intermediate results (like the different heat flows) is to recompute them in a second pass after the numerical propagator completes its pass.
 
 ## References
 Much of the methodology and some of the math for this project is taken from: \

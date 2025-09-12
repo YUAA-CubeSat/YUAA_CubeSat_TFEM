@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
-import pint; from pint import Quantity; u=pint.UnitRegistry()
+from pint import Quantity
 
 import constants
+from constants import u
 
 def check_intersection(r_sat: np.ndarray, r_sun: np.ndarray, R_earth: float) -> bool:
     """Check whether the sat is in Earth's shadow
@@ -130,6 +131,12 @@ class SGP4Orbit(Orbit):
         self.q_earth_ir = constants.EARTH_IR_NORMAL_POWER.to(u.W/(u.m**2)).magnitude
 
     def set_input(self, t: pd.Timestamp):
+        """Set current time 
+        
+        Calling this method triggers a query to the SGP4 propagator
+        and a lookup in the jpl ephemeris.
+        t must be a TIMEZONE-AWARE pandas Timestamp to avoid amiguities when converting to Julian date.
+        """
         try:
             if abs((t-self.t).total_seconds()) < self.t_tol:
                 return

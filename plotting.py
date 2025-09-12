@@ -64,7 +64,11 @@ def plot_elts_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elts: list[LumpedMass], 
     # Determine global x/y limits for all subplots
     all_Ts = np.array(Ts).flatten()
     T_min, T_max = np.min(all_Ts), np.max(all_Ts)
-    x_min, x_max = np.min(ts), np.max(ts)
+    if orbital_period:
+        ts_scaled = ts / orbital_period
+        x_min, x_max = np.min(ts_scaled), np.max(ts_scaled)
+    else:
+        x_min, x_max = np.min(ts), np.max(ts)
     
     # Store all q_flow data to determine y-axis limits for heat flux
     all_q_flows = []
@@ -127,7 +131,7 @@ def plot_elts_T_q_flows(ts: np.ndarray, Ts: np.ndarray, elts: list[LumpedMass], 
     # Create a single legend outside the subplots
     fig.legend(handles=all_artists, loc='lower center', bbox_to_anchor=(0.5, 0), 
                ncol=min(len(all_artists), 3), frameon=True)
-    
+        
     # Adjust layout to make room for the legend
     fig.tight_layout(rect=(0, 0.1, 1, 0.98))
     
