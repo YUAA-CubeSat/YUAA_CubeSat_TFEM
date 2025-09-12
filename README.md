@@ -29,8 +29,8 @@ The `requirements.txt` file in this repo lists ALL dependencies, even the option
 * `rotation_sim.py`: class definition for a rotating rigid body. Rotation is propagated with Euler's equation in body coordinates, tracking the body rotation matrix (in inertal coordinates) and the body angular velocity vector (in body coordinates).
 * `rotation_sim_test.py`: a simple script that propagates the rigid body rotation and then generates an interactive 3D animation using vtk.
 * `plotting.py`: a few matplotlib plot generators to get you started.
-* `simple_sim.py`: a jupyter notebook showing examples of using `UniformLumpedMass` and `BetaCircularOrbit` for the simplest possible "spherical cow" model.
-* `main_sim.py`: a jupyter notebook showcasing the full capabilities of this code, including accurate orbit propagation with an `SGP4Orbit` and using `ConnectedLumpedMass`es to represent the sat as six lumped masses corresponding to the six cuboid faces.
+* `simple_sim.ipynb`: a jupyter notebook showing examples of using `UniformLumpedMass` and `BetaCircularOrbit` for the simplest possible "spherical cow" model.
+* `main_sim.ipynb`: a jupyter notebook showcasing the full capabilities of this code, including accurate orbit propagation with an `SGP4Orbit` and using `ConnectedLumpedMass`es to represent the sat as six lumped masses corresponding to the six cuboid faces.
 ### Unit conventions
 Objects are initialized using pint Quantities, but objects immediately convert those to floats in SI units. At runtime, only unitless floats are used.
 ## Scope, limitations, extensions
